@@ -1,31 +1,34 @@
-import { TestBed } from '@angular/core/testing';
-import { AppComponent } from './app.component';
+import {interval, map, shareReplay} from 'rxjs';
+import {TestScheduler} from 'rxjs/testing';
 
-describe('AppComponent', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [
-        AppComponent
-      ],
-    }).compileComponents();
+describe('interval', () => {
+  let testScheduler: TestScheduler;
+
+  beforeEach(() => {
+    testScheduler = new TestScheduler((actual, expected) => {
+      expect(actual).toEqual(expected);
+    });
   });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+  it('should repeat forever without shareReplay', () => {
+    testScheduler.run(({ expectObservable }) => {
+      const foreverStream$ = interval(1).pipe(map(() => 'a'));
+
+      // Omitting this arg may crash the test suite.
+      const unsub = '------!';
+
+      expectObservable(foreverStream$, unsub).toBe('-aaaaa');
+    });
   });
 
-  it(`should have as title 'ng14-test'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('ng14-test');
-  });
+  it('should repeat forever with shareReplay', () => {
+    testScheduler.run(({ expectObservable }) => {
+      const foreverStream$ = interval(1).pipe(map(() => 'a'), shareReplay(1));
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('ng14-test app is running!');
+      // Omitting this arg may crash the test suite.
+      const unsub = '------!';
+
+      expectObservable(foreverStream$, unsub).toBe('-aaaaa');
+    });
   });
 });
